@@ -14,7 +14,7 @@ df = spark.read.format('csv')\
     .option("encoding", "utf-8")\
     .schema("userId STRING, movieId STRING, rating DOUBLE, tstamp TIMESTAMP" )\
     .load('hdfs://node-1:9000/user/root/testfile/ratings.csv')
-
+df.show()
 # 筛选 without groups (shorthand for df.groupBy().agg()).
 # df.agg({"rating": "max"}).show()
 
@@ -40,25 +40,25 @@ df = spark.read.format('csv')\
 # 打印表
 # df.show()
 # df.count()
-df2 = df.limit(5)
-#d f2.count()
-df2.printSchema()
-df2.show()
-### write to mysql
-df2.write.mode("overwrite").\
-     format("jdbc").\
-     option("url","jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true").\
-     option("dbtable","movie_data").\
-     option("user","spark").\
-     option("password","12345678").\
-     save()
-
-
-df3 = spark.read.format("jdbc").\
-     option("url","jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true").\
-     option("dbtable","movie_data").\
-     option("user","spark").\
-     option("password","12345678").\
-     load()
-
-df3.show()
+# df2 = df.limit(5)
+# #d f2.count()
+# df2.printSchema()
+# df2.show()
+# ### write to mysql
+# df2.write.mode("overwrite").\
+#      format("jdbc").\
+#      option("url","jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true").\
+#      option("dbtable","movie_data").\
+#      option("user","spark").\
+#      option("password","12345678").\
+#      save()
+#
+#
+# df3 = spark.read.format("jdbc").\
+#      option("url","jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true").\
+#      option("dbtable","movie_data").\
+#      option("user","spark").\
+#      option("password","12345678").\
+#      load()
+#
+# df3.show()
