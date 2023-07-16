@@ -40,22 +40,23 @@ df = spark.read.format('csv')\
 # 打印表
 # df.show()
 # df.count()
-# df2 = df.limit(5)
+df2 = df.limit(5)
 #d f2.count()
-# df2.show()
+df2.printSchema()
+df2.show()
 ### write to mysql
-# df2.write.mode("overwrite").\
-#      format("jdbc").\
-#      option("url","jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true").\
-#      option("dbtable","movie_data_1").\
-#      option("user","spark").\
-#      option("password","12345678").\
-#      save()
+df2.write.mode("overwrite").\
+     format("jdbc").\
+     option("url","jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true").\
+     option("dbtable","movie_data").\
+     option("user","spark").\
+     option("password","12345678").\
+     save()
 
 
 df3 = spark.read.format("jdbc").\
      option("url","jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true").\
-     option("dbtable","movie_data_1").\
+     option("dbtable","movie_data").\
      option("user","spark").\
      option("password","12345678").\
      load()
