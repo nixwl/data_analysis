@@ -49,6 +49,7 @@ for count_1 in range(1, len(base_list), 1):
     each_item_List = str(base_list[count_1]).split(',')
     # print(each_item_List)
     # 处理每行的每列
+    write_info = True
     for count_2 in range(len(each_item_List)):
         # print(each_item_List[count_2], end=' ')
         if count_2 == 0:
@@ -59,6 +60,16 @@ for count_1 in range(1, len(base_list), 1):
         if count_2 == 3:
             temp = str(each_item_List[count_2]).split('平')[0]
             each_item_List[count_2] = temp
+            # print(each_item_List[count_2])
+
+        if count_2 == 4:
+            temp = str(each_item_List[count_2]).split(' ')[0]
+            each_item_List[count_2] = temp
+            # print(each_item_List[count_2])
+
+        if count_2 == 6:
+            if '楼层' not in each_item_List[count_2]:
+                write_info = False
             # print(each_item_List[count_2])
 
         if count_2 == 7:
@@ -81,7 +92,9 @@ for count_1 in range(1, len(base_list), 1):
             temp = each_item_List[count_2].split('人')[0]
             each_item_List[count_2] = temp
             # print(each_item_List[count_2])
-    modified_list.append(each_item_List)
+
+    if write_info:
+        modified_list.append(each_item_List)
 
 # for i in modified_list:
 #     print(i)
@@ -138,7 +151,7 @@ schema = StructType([
 df = rdd.toDF(schema)
 
 df.printSchema()
-# df.show()
+df.show()
 
 
 #
