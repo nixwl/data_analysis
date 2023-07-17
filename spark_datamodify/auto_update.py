@@ -33,11 +33,11 @@ def update_other_table_schema(df2):
      return [AaP, TaP, RaP, MaP, LaP, BTaP, CaPB, CaT, CaP]
 
 
-def write_tableTosql(df):
+def write_tableTosql(df, name):
      df.write.mode("overwrite"). \
           format("jdbc"). \
           option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
-          option("dbtable", df + "_data"). \
+          option("dbtable",  name + "_data"). \
           option("user", "spark"). \
           option("password", "12345678"). \
           save()
@@ -52,9 +52,10 @@ def __main__():
      # 查看其他表数据
      for i in table_list:
           print(i.show())
+     name_list = ['AaP', 'TaP', 'RaP', 'MaP', 'LaP', 'BTaP', 'CaPB', 'CaT', 'CaP']
      # 表存入数据库：
      for i in table_list:
-          write_tableTosql(i)
+          write_tableTosql(i,name_list[i])
      spark.stop()
 
 __main__()
