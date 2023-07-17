@@ -1,6 +1,7 @@
 from pyspark import SparkConf,SparkContext
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DoubleType
+from pyspark.sql.functions import monotonically_increasing_id
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DoubleType, LongType
 
 '''
 @: format:
@@ -118,19 +119,19 @@ rdd = sc.parallelize(modified_list)
 
 
 schema = StructType([
-        StructField("名称", StringType(), False),
-        StructField("地址", StringType(), False),
-        StructField("房型", StringType(), False),
-        StructField("面积", DoubleType(), False),
-        StructField("朝向", StringType(), False),
-        StructField("装修", StringType(), False),
-        StructField("楼层", StringType(), False),
-        StructField("建成时间", StringType(), False),
-        StructField("楼层结构", StringType(), False),
-        StructField("总价格", DoubleType(), False),
-        StructField("平方价格", DoubleType(), False),
-        StructField("关注度", IntegerType(), False),
-        StructField("发布时间", StringType(), False)
+        StructField("name", StringType(), False),#名称
+        StructField("address", StringType(), False),#地址
+        StructField("type", StringType(), False),#房型
+        StructField("room", DoubleType(), False),#面积
+        StructField("orient", StringType(), False),#朝向
+        StructField("what_fix", StringType(), False),#装修
+        StructField("level", StringType(), False),#楼层
+        StructField("built_time", StringType(), False),#建成时间
+        StructField("level_structure", StringType(), False),#楼层结构
+        StructField("total_price", DoubleType(), False),#总价格
+        StructField("room_price", DoubleType(), False),#平方价格
+        StructField("concern_rate", IntegerType(), False),#关注度
+        StructField("publish_time", StringType(), False)#发布时间
 ])
 # StructField("name", StringType(), False),
 # StructField("address", StringType(), False),
@@ -149,12 +150,16 @@ schema = StructType([
 # convert RDD -> DataFrame
 # df = spark.createDataFrame(rdd, schema)
 df = rdd.toDF(schema)
+df = df.dropDuplicates()
+# 设置虚拟主键自增策略
+df = df.withColumn("id", monotonically_increasing_id())
+# df.schema.add(StructField("编号", LongType(),nullable=False))
+# df.rdd.zipWithUniqueId()
+# df.printSchema()
+# df.show()
+# print(df.dropDuplicates().select("关注度", "平方价格", '总价格').orderBy(df["关注度"].desc()).show())
 
-df.printSchema()
-df.show()
 
-
-#
 # ### write to mysql
 df.write.mode("overwrite").\
      format("jdbc").\
