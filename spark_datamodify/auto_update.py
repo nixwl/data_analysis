@@ -57,7 +57,7 @@ def __main__():
           write_tableTosql(i)
      spark.stop()
 
-
+__main__()
 # ### write to mysql
 # AaP.write.mode("overwrite").\
 #      format("jdbc").\
