@@ -54,8 +54,8 @@ def __main__():
           print(i.show())
      name_list = ['AaP', 'TaP', 'RaP', 'MaP', 'LaP', 'BTaP', 'CaPB', 'CaT', 'CaP']
      # 表存入数据库：
-     for i in table_list:
-          write_tableTosql(i,name_list[i])
+     for i in range(len(table_list)):
+          write_tableTosql(table_list[i], name_list[i])
      spark.stop()
 
 __main__()
