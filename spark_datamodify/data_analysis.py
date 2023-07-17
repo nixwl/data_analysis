@@ -37,9 +37,9 @@ def __main__():
          quantiles_7_10,
          quantiles_8_10,
          quantiles_9_10,
-    ]= df1.approxQuantile("concern_rate", [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875], 0.01)
-    print(quantiles)
-
-
+    ]= df1.approxQuantile("concern_rate", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 0.01)
+    quantiles = list(set(quantiles))
+    print(quantiles) ## quantiles 是分位点列表
 # ----------------------------------------------------------------------------------- #
+
 __main__()
