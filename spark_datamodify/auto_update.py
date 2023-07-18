@@ -64,6 +64,16 @@ def execsql():
      PK_CaPB = "ALTER TABLE CaPB_data ADD PRIMARY KEY(id);"
      PK_CaT = "ALTER TABLE CaT_data ADD PRIMARY KEY(id);"
      PK_CaP = "ALTER TABLE CaP_data ADD PRIMARY KEY(id);"
+     # Index_AaP_data = 'CREATE INDEX idx_AaP_data_id ON AaP_data (id)'
+     # Index_TaP_data = 'CREATE INDEX idx_TaP_data_id ON TaP_data (id)'
+     # Index_RaP_data = 'CREATE INDEX idx_RaP_data_id ON RaP_data (id)'
+     # Index_MaP_data = 'CREATE INDEX idx_MaP_data_id ON MaP_data (id)'
+     # Index_LaP_data = 'CREATE INDEX idx_LaP_data_id ON LaP_data (id)'
+     # Index_BTaP_data = 'CREATE INDEX idx_BTaP_data_id ON BTaP_data (id)'
+     # Index_CaPB_data = 'CREATE INDEX idx_CaPB_data_id ON CaPB_data (id)'
+     # Index_CaT_data = 'CREATE INDEX idx_CaT_data_id ON CaT_data (id)'
+     # Index_CaP_data = 'CREATE INDEX idx_CaP_data_id ON CaP_data (id)'
+
 
      FK_AaP_data_base_data = "alter table spark.AaP_data add constraint AaP_data_base_data_id_fk foreign key (id) references spark.base_data (id) on update cascade;"
 
@@ -86,14 +96,21 @@ def execsql():
      PK_ExecList = [PK_AaP, PK_TaP, PK_RaP, PK_MaP, PK_LaP, PK_BTaP, PK_CaPB, PK_CaT, PK_CaP]
      FK_ExecList = [FK_AaP_data_base_data, FK_TaP_data_base_data, FK_RaP_data_base_data, FK_Map_data_base_data, FK_Lap_data_base_data,
                     FK_BTap_data_base_data, FK_CaPB_data_base_data, FK_CaT_data_base_data, FK_CaP_data_base_data]
-     # 3. 执行游标
-     for PK in PK_ExecList:
-          cur.execute(PK)
-     db.commit()
+     # Index_ExecList = [Index_AaP_data, Index_TaP_data, Index_RaP_data, Index_MaP_data,
+     #                   Index_LaP_data, Index_BTaP_data, Index_CaPB_data, Index_CaT_data,
+     #                   Index_CaP_data]
+
+     # for Index in Index_ExecList:
+     #      cur.execute(Index)
 
      for FK in FK_ExecList:
           cur.execute(FK)
      db.commit()
+
+     # 3. 执行游标
+     # for PK in PK_ExecList:
+     #      cur.execute(PK)
+     # db.commit()
 
      # 查看游标执行结果
      # for line in cur.fetchall():
@@ -121,8 +138,8 @@ def __main__():
      # 数据库表结构更新
      execsql()
 
-__main__()
-# execsql()
+# __main__()
+execsql()
 
 
 # ### write to mysql

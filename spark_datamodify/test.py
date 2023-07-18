@@ -6,16 +6,18 @@ from pyspark.sql.types import StructType, StructField
 import pandas as pd
 from pyspark.sql.functions import split, col, substring_index
 
-
 '''
 :@ function: 配件启动函数
 '''
 def conf_init():
-     spark = SparkSession.builder.appName("data_analysis").master("local").getOrCreate()
-     sc = spark.sparkContext
-     return spark, sc
+    spark = SparkSession.builder.appName("data_analysis").master("local").getOrCreate()
+    sc = spark.sparkContext
+    return spark, sc
 
 
+'''
+:@ function: 数据库加载函数
+'''
 def load_data(spark, dbname):
     df2 = spark.read.format("jdbc"). \
         option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true&characterEncoding=UTF-8"). \
@@ -37,7 +39,8 @@ def process_CaP_data_quantiles(spark, df_CaP_data, quantiles):
         if i < len_ - 1:
             num_begin = quantiles[i]
             num_end = quantiles[i + 1]
-            range_str = " `concern_rate` " + " >= " + str(num_begin) + " and " + " `concern_rate` " + " < " + str(num_end)
+            range_str = " `concern_rate` " + " >= " + str(num_begin) + " and " + " `concern_rate` " + " < " + str(
+                num_end)
             sql_log = "select * from df_CaP_data_temp_view where" + range_str + \
                       " ORDER BY `concern_rate` asc, room_price desc, total_price desc"
             return_df.append(spark.sql(sql_log))
@@ -71,87 +74,7 @@ def process_CaP_data_quantiles(spark, df_CaP_data, quantiles):
     process_CaP_data_quantiles_savetomysql("CaP_data", return_df, each_df_analysis, quantiles)
 
 
-def process_CaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis,quantiles):
-    # 依次将分组数据存入数据库：
-    grouped_db = list()
-    grouped_analysis_db = list()
-    for name in quantiles:
-        grouped_db.append(db_name + "grouped_db" + str(int(name)))
-        grouped_analysis_db.append(db_name + "grouped_analysis_" + str(int(name)) + "db")
-    # print(grouped_db,' ' ,grouped_analysis_db, ' ', len(quantiles))
-    # 存储分组数据
-    for index in range(len(return_df)):
-        return_df[index].write.mode("overwrite"). \
-                        format("jdbc"). \
-                        option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
-                        option("dbtable", grouped_db[index]). \
-                        option("user", "spark"). \
-                        option("password", "12345678"). \
-                        save()
-    # 存储组分析数据
-    for index in range(len(each_df_analysis)):
-        each_df_analysis[index].write.mode("overwrite"). \
-                                format("jdbc"). \
-                                option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
-                                option("dbtable", grouped_analysis_db[index]). \
-                                option("user", "spark"). \
-                                option("password", "12345678"). \
-                                save()
-    print("savetomysql down")
-
-def process_CaP_data(spark):
-    df_CaP_data = load_data(spark, 'CaP_data')
-    # df1.show(1000)
-    quantiles = df_CaP_data.approxQuantile("concern_rate", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 0.01)
-    quantiles = list(set(quantiles))
-    # print(quantiles) ## quantiles 是分位点列表
-    # -----------[0.0, 1.0, 2.0, 3.0, 5.0, 7.0, 15.0] ----------------------------------------------#
-    process_CaP_data_quantiles(spark, df_CaP_data, quantiles)
-
-
-def process_RaP_data_quantiles(spark,df_RaP_data,quantiles):
-    len_ = len(quantiles)
-    df_RaP_data.createOrReplaceTempView("df_RaP_data_temp_view")
-    return_df = list()
-    each_df_analysis = list()
-
-    for i in range(len_):
-        if i == 0:
-            range_str = " `room` " + " < " + str(quantiles[i])
-            sql_log = "select * from df_RaP_data_temp_view where" + range_str + \
-                      " ORDER BY `room` desc, `room_price` desc, `total_price` desc"
-            return_df.append(spark.sql(sql_log))
-
-        elif i == len_:
-            range_str = " `concern_rate` " + " >= " + str(quantiles[i])
-            sql_log = "select * from df_RaP_data_temp_view where" + range_str + \
-                      " ORDER BY `room` desc, `room_price` desc, `total_price` desc"
-            return_df.append(spark.sql(sql_log))
-
-        elif i < len_ - 1:
-            num_begin = str(quantiles[i])
-            num_end = str(quantiles[i + 1])
-            range_str = " `room` " + " >= " + num_begin + " and " + " `room` " + " < " + num_end
-            sql_log = "select * from df_RaP_data_temp_view where" + range_str + \
-                      " ORDER BY `room` desc, `room_price` desc, `total_price` desc"
-            return_df.append(spark.sql(sql_log))
-    #checkpoint: print(return_df)
-
-    # 依次处理 df
-    for df in return_df:
-        df.printSchema()
-        df_room_info = df.describe("room")
-        df_room_price_info = df.describe("room_price")
-        df_total_price_info = df.describe("total_price")
-        joined_df = df_room_info.join(df_room_price_info, on='summary', how="inner")
-        joined_df = joined_df.join(df_total_price_info, on='summary', how='inner')
-        #checkpoint：print(joined_df.show())
-        each_df_analysis.append(joined_df)
-
-    process_CaP_data_quantiles_savetomysql("RaP_data", return_df, each_df_analysis, quantiles)
-
-
-def process_RaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis,quantiles):
+def process_CaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis, quantiles):
     # 依次将分组数据存入数据库：
     grouped_db = list()
     grouped_analysis_db = list()
@@ -179,6 +102,88 @@ def process_RaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis,
             save()
     print("savetomysql down")
 
+
+def process_CaP_data(spark):
+    df_CaP_data = load_data(spark, 'CaP_data')
+    # df1.show(1000)
+    quantiles = df_CaP_data.approxQuantile("concern_rate", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 0.01)
+    quantiles = list(set(quantiles))
+    # print(quantiles) ## quantiles 是分位点列表
+    # -----------[0.0, 1.0, 2.0, 3.0, 5.0, 7.0, 15.0] ----------------------------------------------#
+    process_CaP_data_quantiles(spark, df_CaP_data, quantiles)
+
+
+def process_RaP_data_quantiles(spark, df_RaP_data, quantiles):
+    len_ = len(quantiles)
+    df_RaP_data.createOrReplaceTempView("df_RaP_data_temp_view")
+    return_df = list()
+    each_df_analysis = list()
+
+    for i in range(len_):
+        if i == 0:
+            range_str = " `room` " + " < " + str(quantiles[i])
+            sql_log = "select * from df_RaP_data_temp_view where" + range_str + \
+                      " ORDER BY `room` desc, `room_price` desc, `total_price` desc"
+            return_df.append(spark.sql(sql_log))
+
+        elif i == len_:
+            range_str = " `concern_rate` " + " >= " + str(quantiles[i])
+            sql_log = "select * from df_RaP_data_temp_view where" + range_str + \
+                      " ORDER BY `room` desc, `room_price` desc, `total_price` desc"
+            return_df.append(spark.sql(sql_log))
+
+        elif i < len_ - 1:
+            num_begin = str(quantiles[i])
+            num_end = str(quantiles[i + 1])
+            range_str = " `room` " + " >= " + num_begin + " and " + " `room` " + " < " + num_end
+            sql_log = "select * from df_RaP_data_temp_view where" + range_str + \
+                      " ORDER BY `room` desc, `room_price` desc, `total_price` desc"
+            return_df.append(spark.sql(sql_log))
+    # checkpoint: print(return_df)
+
+    # 依次处理 df
+    for df in return_df:
+        df.printSchema()
+        df_room_info = df.describe("room")
+        df_room_price_info = df.describe("room_price")
+        df_total_price_info = df.describe("total_price")
+        joined_df = df_room_info.join(df_room_price_info, on='summary', how="inner")
+        joined_df = joined_df.join(df_total_price_info, on='summary', how='inner')
+        # checkpoint：print(joined_df.show())
+        each_df_analysis.append(joined_df)
+
+    process_CaP_data_quantiles_savetomysql("RaP_data", return_df, each_df_analysis, quantiles)
+
+
+def process_RaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis, quantiles):
+    # 依次将分组数据存入数据库：
+    grouped_db = list()
+    grouped_analysis_db = list()
+    for name in quantiles:
+        grouped_db.append(db_name + "grouped_db" + str(int(name)))
+        grouped_analysis_db.append(db_name + "grouped_analysis_" + str(int(name)) + "db")
+    # print(grouped_db,' ' ,grouped_analysis_db, ' ', len(quantiles))
+    # 存储分组数据
+    for index in range(len(return_df)):
+        return_df[index].write.mode("overwrite"). \
+            format("jdbc"). \
+            option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
+            option("dbtable", grouped_db[index]). \
+            option("user", "spark"). \
+            option("password", "12345678"). \
+            save()
+    # 存储组分析数据
+    for index in range(len(each_df_analysis)):
+        each_df_analysis[index].write.mode("overwrite"). \
+            format("jdbc"). \
+            option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
+            option("dbtable", grouped_analysis_db[index]). \
+            option("user", "spark"). \
+            option("password", "12345678"). \
+            save()
+    print("savetomysql down")
+
+
 def process_RaP_data(spark):
     df_RaP_data = load_data(spark, 'RaP_data')
     quantiles = df_RaP_data.approxQuantile("room", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 0.01)
@@ -186,7 +191,7 @@ def process_RaP_data(spark):
     quantiles.sort()
     # print(quantiles) # [63.41, 76.14, 81.76, 87.36, 89.67, 95.4, 106.58, 119.21, 132.47]
     # ---------------------------------------------------------------------------------------------- #
-    process_RaP_data_quantiles(spark,df_RaP_data,quantiles)
+    process_RaP_data_quantiles(spark, df_RaP_data, quantiles)
 
 
 def process_TaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis):
@@ -214,7 +219,6 @@ def process_TaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis)
 
 
 def process_Tap_data_quantiles(spark, df_Tap_data_pandas_groupby_dataframe):
-
     return_df = list()
     each_df_analysis = list()
 
@@ -226,9 +230,9 @@ def process_Tap_data_quantiles(spark, df_Tap_data_pandas_groupby_dataframe):
     for each_name, each_frame in df_Tap_data_pandas_groupby_dataframe:
         each_frame_room_price_info = each_frame.describe("room_price")
         each_frame_total_price_info = each_frame.describe("total_price")
-        joined_df = each_frame_room_price_info.join(each_frame_total_price_info ,on='summary', how="inner")
-        #print(joined_df.show())
-        each_df_analysis.append((each_name,joined_df))
+        joined_df = each_frame_room_price_info.join(each_frame_total_price_info, on='summary', how="inner")
+        # print(joined_df.show())
+        each_df_analysis.append((each_name, joined_df))
     # print(return_df)
     # print(each_df_analysis)
 
@@ -278,6 +282,7 @@ def process_Map_data_quantiles_savetomysql(db_name, return_df, each_df_analysis)
 
     print("savetomysql down")
 
+
 def process_Map_data_quantiles(spark, df_MaP_data_pandas_groupby_what_fix_dataframe):
     return_df = list()
     each_df_analysis = list()
@@ -298,6 +303,7 @@ def process_Map_data_quantiles(spark, df_MaP_data_pandas_groupby_what_fix_datafr
 
     # 存储数据
     process_Map_data_quantiles_savetomysql("MaP_data", return_df, each_df_analysis)
+
 
 def process_MaP_data(spark):
     df_MaP_data = load_data(spark, 'MaP_data')
@@ -339,7 +345,8 @@ def process_LaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis)
 
     print("savetomysql down")
 
-def process_LaP_data_quantiles(spark , df_LaP_data_pandas_groupby_current_level_dataframe):
+
+def process_LaP_data_quantiles(spark, df_LaP_data_pandas_groupby_current_level_dataframe):
     return_df = list()
     each_df_analysis = list()
 
@@ -348,12 +355,12 @@ def process_LaP_data_quantiles(spark , df_LaP_data_pandas_groupby_current_level_
         each_frame = spark.sql("select * from each_frame_view ORDER BY `room_price` desc, `total_price` desc ")
         return_df.append((each_name, each_frame))
 
-
     for each_current_level_name, each_current_level_frame in df_LaP_data_pandas_groupby_current_level_dataframe:
         each_current_level_frame_room_price_info = each_current_level_frame.describe("room_price")
         each_current_level_frame_total_price_info = each_current_level_frame.describe("total_price")
 
-        joined_df = each_current_level_frame_room_price_info.join(each_current_level_frame_total_price_info, on='summary', how="inner")
+        joined_df = each_current_level_frame_room_price_info.join(each_current_level_frame_total_price_info,
+                                                                  on='summary', how="inner")
         # print(joined_df.show())
         each_df_analysis.append((each_current_level_name, joined_df))
     # print(return_df)
@@ -361,6 +368,7 @@ def process_LaP_data_quantiles(spark , df_LaP_data_pandas_groupby_current_level_
 
     # 存储数据
     process_LaP_data_quantiles_savetomysql("LaP_data", return_df, each_df_analysis)
+
 
 def process_LaP_data(spark):
     df_LaP_data = load_data(spark, 'LaP_data')
@@ -388,6 +396,7 @@ def process_LaP_data(spark):
     #     group_dataframe.show()
     process_LaP_data_quantiles(spark, df_LaP_data_pandas_groupby_current_level_dataframe)
 
+
 def process_AaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis, quantiles):
     # 依次将分组数据存入数据库：
     grouped_db = list()
@@ -399,22 +408,23 @@ def process_AaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis,
     # 存储分组数据
     for index in range(len(return_df)):
         return_df[index].write.mode("overwrite"). \
-                        format("jdbc"). \
-                        option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
-                        option("dbtable", grouped_db[index]). \
-                        option("user", "spark"). \
-                        option("password", "12345678"). \
-                        save()
+            format("jdbc"). \
+            option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
+            option("dbtable", grouped_db[index]). \
+            option("user", "spark"). \
+            option("password", "12345678"). \
+            save()
     # 存储组分析数据
     for index in range(len(each_df_analysis)):
         each_df_analysis[index].write.mode("overwrite"). \
-                                format("jdbc"). \
-                                option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
-                                option("dbtable", grouped_analysis_db[index]). \
-                                option("user", "spark"). \
-                                option("password", "12345678"). \
-                                save()
+            format("jdbc"). \
+            option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
+            option("dbtable", grouped_analysis_db[index]). \
+            option("user", "spark"). \
+            option("password", "12345678"). \
+            save()
     print("savetomysql down")
+
 
 def process_AaP_data_quantiles(spark, df_AaP_data, quantiles):
     len_ = len(quantiles)
@@ -433,7 +443,8 @@ def process_AaP_data_quantiles(spark, df_AaP_data, quantiles):
             sql_log = "select * from df_RaP_data_temp_view where" + range_str + " ORDER BY room_price desc, total_price desc"
             return_df.append(spark.sql(sql_log))
         elif i < len_ - 1:
-            range_str = " `room_price` " + " >= " + str(quantiles[i]) + " and " + " `room_price` " + " < " + str(quantiles[i + 1])
+            range_str = " `room_price` " + " >= " + str(quantiles[i]) + " and " + " `room_price` " + " < " + str(
+                quantiles[i + 1])
             sql_log = "select * from df_RaP_data_temp_view where" + range_str + " ORDER BY room_price desc, total_price desc"
             return_df.append(spark.sql(sql_log))
     # print(return_df)
@@ -449,6 +460,7 @@ def process_AaP_data_quantiles(spark, df_AaP_data, quantiles):
         each_df_analysis.append(joined_df)
 
     process_AaP_data_quantiles_savetomysql("AaP_data", return_df, each_df_analysis, quantiles)
+
 
 def process_AaP_data(spark):
     df_AaP_data = load_data(spark, 'AaP_data')
@@ -488,6 +500,7 @@ def process_BTaP_data_quantiles_savetomysql(db_name, return_df, each_df_analysis
             save()
     print("savetomysql down")
 
+
 def process_BTaP_data_quantiles(spark, df_BTaP_data, quantiles):
     len_ = len(quantiles)
     df_BTaP_data.createOrReplaceTempView("df_BTaP_data_temp_view")
@@ -505,7 +518,8 @@ def process_BTaP_data_quantiles(spark, df_BTaP_data, quantiles):
             sql_log = "select * from df_BTaP_data_temp_view where " + range_str + " ORDER BY room_price desc, total_price desc"
             return_df.append(spark.sql(sql_log))
         elif i < len_ - 1:
-            range_str = " `built_time` " + " >= " + str(int(quantiles[i])) + " and " + " `built_time` " + " < " + str(int(quantiles[i+1]))
+            range_str = " `built_time` " + " >= " + str(int(quantiles[i])) + " and " + " `built_time` " + " < " + str(
+                int(quantiles[i + 1]))
             sql_log = "select * from df_BTaP_data_temp_view where " + range_str + " ORDER BY room_price desc, total_price desc"
             return_df.append(spark.sql(sql_log))
     # print(return_df)
@@ -524,6 +538,7 @@ def process_BTaP_data_quantiles(spark, df_BTaP_data, quantiles):
     # print(each_df_analysis)
 
     process_BTaP_data_quantiles_savetomysql("BTaP_data", return_df, each_df_analysis, quantiles)
+
 
 def process_BTaP_data(spark):
     df_BTaP_data = load_data(spark, 'BTaP_data')
@@ -559,6 +574,7 @@ def process_CaPB_data_quantiles_savetomysql(db_name, return_df, each_df_analysis
 
     print("savetomysql down")
 
+
 def process_CaPB_data_quantiles(spark, df_CaPB_data_pandas_groupby_orient_dataframe):
     return_df = list()
     each_df_analysis = list()
@@ -578,6 +594,7 @@ def process_CaPB_data_quantiles(spark, df_CaPB_data_pandas_groupby_orient_datafr
     # 存储数据
     process_CaPB_data_quantiles_savetomysql("CaPB_data", return_df, each_df_analysis)
 
+
 def process_CaPB_data(spark):
     df_CaPB_data = load_data(spark, 'CaPB_data')
     df_CaPB_data_pandas = df_CaPB_data.toPandas()
@@ -592,7 +609,7 @@ def process_CaPB_data(spark):
     # for group_name, group_dataframe in df_BTaP_data_pandas_groupby_orient_dataframe:
     #     print(f"Group: {group_name}")
     #     group_dataframe.show()
-    
+
     process_CaPB_data_quantiles(spark, df_CaPB_data_pandas_groupby_orient_dataframe)
 
 
@@ -637,6 +654,7 @@ def process_CaT_data_quantiles(spark, df_CaPB_data_pandas_groupby_type_dataframe
     # 存储数据
     process_CaT_data_quantiles_savetomysql("CaT_data", return_df, each_df_analysis)
 
+
 def process_CaT_data(spark):
     df_CaT_data = load_data(spark, 'CaT_data')
     df_CaT_data_pandas = df_CaT_data.toPandas()
@@ -649,16 +667,12 @@ def process_CaT_data(spark):
 
     process_CaT_data_quantiles(spark, df_CaPB_data_pandas_groupby_type_dataframe)
 
+
 def __main__():
     spark, sc = conf_init()
 
-    # 处理 CaP_data 的 示例程序
-    df_CaP_data = load_data(spark, 'CaP_data')
-    import process_Cap_data as Cap
-    Cap.CaP_data_Process_init(spark, df_CaP_data)
     # 处理 CaP_data
     # process_CaP_data(spark)
-    # -------------------------------------------------- #
 
     # 处理 RaP_data
     # process_RaP_data(spark)
@@ -684,8 +698,7 @@ def __main__():
     process_CaT_data(spark)
     # 处理 CaT_data
 
-
-
     spark.stop()
+
 
 __main__()

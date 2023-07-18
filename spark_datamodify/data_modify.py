@@ -75,7 +75,7 @@ for count_1 in range(1, len(base_list), 1):
 
         if count_2 == 7:
             temp = str(each_item_List[count_2]).split('年')[0]
-            each_item_List[count_2] = temp
+            each_item_List[count_2] = int(temp)     # tue: 15.05 最后一次修改
             # print(each_item_List[count_2])
 
         if count_2 == 9:
@@ -93,7 +93,11 @@ for count_1 in range(1, len(base_list), 1):
             temp = each_item_List[count_2].split('人')[0]
             each_item_List[count_2] = temp
             # print(each_item_List[count_2])
-
+        if count_2 == 12:
+            temp = each_item_List[count_2]
+            has_digit = any(char.isdigit() for char in temp)
+            if not has_digit:
+                write_info = False
     if write_info:
         modified_list.append(each_item_List)
 
@@ -126,7 +130,7 @@ schema = StructType([
         StructField("orient", StringType(), False),#朝向
         StructField("what_fix", StringType(), False),#装修
         StructField("level", StringType(), False),#楼层
-        StructField("built_time", StringType(), False),#建成时间
+        StructField("built_time", IntegerType(), False),#建成时间
         StructField("level_structure", StringType(), False),#楼层结构
         StructField("total_price", DoubleType(), False),#总价格
         StructField("room_price", DoubleType(), False),#平方价格
