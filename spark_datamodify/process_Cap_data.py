@@ -55,18 +55,18 @@ def savetomysql(db_name, return_df, each_df_analysis,quantiles):
     for index in range(len(return_df)):
         return_df[index].write.mode("overwrite"). \
                         format("jdbc"). \
-                        option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
+                        option("url", "jdbc:mysql://192.168.101.20:3306/spark_test?useSSL=false&Unicode=true"). \
                         option("dbtable", grouped_db[index]). \
-                        option("user", "spark"). \
-                        option("password", "12345678"). \
+                        option("user", "spark_test"). \
+                        option("password", "13674796127zJ"). \
                         save()
     # 存储组分析数据
     for index in range(len(each_df_analysis)):
         each_df_analysis[index].write.mode("overwrite"). \
                                 format("jdbc"). \
-                                option("url", "jdbc:mysql://192.168.101.20:3306/spark?useSSL=false&Unicode=true"). \
+                                option("url", "jdbc:mysql://192.168.101.20:3306/spark_test?useSSL=false&Unicode=true"). \
                                 option("dbtable", grouped_analysis_db[index]). \
-                                option("user", "spark"). \
+                                option("user", "spark_test"). \
                                 option("password", "12345678"). \
                                 save()
     print("savetomysql down")

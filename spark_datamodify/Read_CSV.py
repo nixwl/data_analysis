@@ -15,6 +15,7 @@ df = spark.read.format('csv')\
     .schema("userId STRING, movieId STRING, rating DOUBLE, tstamp TIMESTAMP" )\
     .load('hdfs://node-1:9000/user/root/testfile/ratings.csv')
 df.show()
+
 # 筛选 without groups (shorthand for df.groupBy().agg()).
 # df.agg({"rating": "max"}).show()
 

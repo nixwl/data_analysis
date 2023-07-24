@@ -11,7 +11,7 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType, 
 
 '''
 @:function: format_func
-@:param: 
+@:param:
     modified_list 信息列表
 @:author:
 
@@ -37,7 +37,6 @@ def format_func(modified_list):
 
 spark = SparkSession.builder.appName("data_analysis").master("local").getOrCreate()
 sc = spark.sparkContext
-
 file_rdd = sc.textFile('hdfs://node-1:9000/user/root/testfile/lianjia.csv')
 
 
@@ -182,3 +181,4 @@ df.write.mode("overwrite").\
 #      load()
 #
 # df2.show()
+
